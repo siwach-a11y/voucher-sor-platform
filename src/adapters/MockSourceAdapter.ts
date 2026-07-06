@@ -29,13 +29,13 @@ function matchesIntent(template: MockListingTemplate, intent: SearchIntent): boo
  * The mock source names/domains (giftflow.market, dealcrate.co, ...) are display-only branding —
  * none of them are real, registered domains, so a "Buy at Store" link built from them would either
  * hit a DNS error or, worse, land on an unrelated site some third party happens to actually own.
- * Real vendor integrations don't exist yet in V1 (spec §6), so instead of pretending otherwise,
- * every mock listing safely resolves to example.com — IANA's domain reserved specifically for
- * illustrative/documentation use (RFC 2606), which always resolves and visibly identifies itself
- * as a placeholder rather than erroring or impersonating a real store.
+ * Real vendor integrations don't exist yet in V1 (spec §6). A bare example.com placeholder resolves
+ * safely but isn't a useful destination, so instead this links to a real web search for the vendor
+ * + voucher — an actually-live page that may well surface the real listing, rather than a dead end.
  */
-function toListingUrl(canonicalVoucherId: string, sourceId: string): string {
-  return `https://example.com/?voucherhub-demo-listing=${canonicalVoucherId}-${sourceId}`
+function toListingUrl(sourceName: string, voucherName: string): string {
+  const query = `${sourceName} ${voucherName} buy voucher`
+  return `https://www.google.com/search?q=${encodeURIComponent(query)}`
 }
 
 /**
@@ -73,7 +73,7 @@ export class MockSourceAdapter implements SourceAdapter {
 
   async validate(url: string): Promise<boolean> {
     await delay(20)
-    // Mock listing URLs all resolve to example.com (see toListingUrl) rather than this.domain,
+    // Mock listing URLs are a real web search (see toListingUrl), not built from this.domain,
     // which is display-only branding, not a real registered domain — see that function's comment.
     return isValidUrl(url)
   }
@@ -85,7 +85,7 @@ export class MockSourceAdapter implements SourceAdapter {
       sourceDomain: source.domain,
       sourceSpeed: source.speed,
       listingTitle: template.voucherName,
-      listingUrl: toListingUrl(template.canonicalVoucherId, source.id),
+      listingUrl: toListingUrl(source.name, template.voucherName),
       brand: template.brand,
       category: template.category,
       subcategory: template.subcategory,
