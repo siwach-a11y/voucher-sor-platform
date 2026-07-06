@@ -25,8 +25,17 @@ function matchesIntent(template: MockListingTemplate, intent: SearchIntent): boo
   return true
 }
 
-function toListingUrl(domain: string, canonicalVoucherId: string, sourceId: string): string {
-  return `https://${domain}/listings/${canonicalVoucherId}-${sourceId}`
+/**
+ * The mock source names/domains (giftflow.market, dealcrate.co, ...) are display-only branding —
+ * none of them are real, registered domains, so a "Buy at Store" link built from them would either
+ * hit a DNS error or, worse, land on an unrelated site some third party happens to actually own.
+ * Real vendor integrations don't exist yet in V1 (spec §6), so instead of pretending otherwise,
+ * every mock listing safely resolves to example.com — IANA's domain reserved specifically for
+ * illustrative/documentation use (RFC 2606), which always resolves and visibly identifies itself
+ * as a placeholder rather than erroring or impersonating a real store.
+ */
+function toListingUrl(canonicalVoucherId: string, sourceId: string): string {
+  return `https://example.com/?voucherhub-demo-listing=${canonicalVoucherId}-${sourceId}`
 }
 
 /**
@@ -64,7 +73,9 @@ export class MockSourceAdapter implements SourceAdapter {
 
   async validate(url: string): Promise<boolean> {
     await delay(20)
-    return isValidUrl(url) && url.includes(this.domain)
+    // Mock listing URLs all resolve to example.com (see toListingUrl) rather than this.domain,
+    // which is display-only branding, not a real registered domain — see that function's comment.
+    return isValidUrl(url)
   }
 
   private toRawListing(template: MockListingTemplate, now: number): RawListing {
@@ -74,7 +85,7 @@ export class MockSourceAdapter implements SourceAdapter {
       sourceDomain: source.domain,
       sourceSpeed: source.speed,
       listingTitle: template.voucherName,
-      listingUrl: toListingUrl(source.domain, template.canonicalVoucherId, source.id),
+      listingUrl: toListingUrl(template.canonicalVoucherId, source.id),
       brand: template.brand,
       category: template.category,
       subcategory: template.subcategory,
