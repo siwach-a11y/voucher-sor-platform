@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@theme {
+  --color-workspace: #f7f7fb;
+  --color-navy-950: #0b1220;
+  --color-navy-900: #101a2e;
+  --color-navy-800: #17233d;
+  --color-navy-700: #24304d;
+  --color-navy-200: #c9d0e0;
+
+  --color-accent-50: #f4f1fd;
+  --color-accent-100: #e8e2fb;
+  --color-accent-500: #6f52e0;
+  --color-accent-600: #5d3fd1;
+  --color-accent-700: #4c33ab;
+
+  --color-live: #1a9c5c;
+  --color-live-bg: #e7f7ee;
+  --color-stale: #b5790a;
+  --color-stale-bg: #fbf1de;
+  --color-unavailable: #b23a3a;
+  --color-unavailable-bg: #fbeaea;
+  --color-unknown: #6b7280;
+  --color-unknown-bg: #f1f2f4;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background-color: var(--color-workspace);
+  color: #1c2233;
+  font-family: var(--font-sans);
+}
+
+/* Dense-but-readable scrollbars for the results list / detail panel, not the browser default. */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--color-navy-200);
+  border-radius: 9999px;
+}
