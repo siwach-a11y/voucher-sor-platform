@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { createBrowserRouter } from 'react-router-dom'
+import { createHashRouter } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { SearchPage } from '@/pages/SearchPage'
@@ -13,7 +13,7 @@ function withShell(page: ReactNode) {
   return <AppShell>{page}</AppShell>
 }
 
-export const router = createBrowserRouter([
+export const router = createHashRouter([
   { path: '/', element: withShell(<DashboardPage />) },
   { path: '/search', element: withShell(<SearchPage />) },
   { path: '/watchlist', element: withShell(<WatchlistPage />) },
