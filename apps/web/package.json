@@ -6,7 +6,8 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "deploy:pages": "PAGES_BASE_PATH=/voucher-sor-platform next build && gh-pages -d out --dotfiles -m \"Deploy static export [skip ci]\""
   },
   "dependencies": {
     "next": "^14.2.5",
@@ -19,6 +20,7 @@
     "@types/node": "^20.14.11",
     "tailwindcss": "^3.4.7",
     "postcss": "^8.4.40",
-    "autoprefixer": "^10.4.19"
+    "autoprefixer": "^10.4.19",
+    "gh-pages": "^6.1.1"
   }
 }
