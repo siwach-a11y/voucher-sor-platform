@@ -4,6 +4,10 @@
 
 generator client {
   provider = "prisma-client-js"
+  // Minimal Alpine images lack the `openssl` CLI Prisma probes to pick an engine binary, so it
+  // silently defaults to the wrong (openssl-1.1.x) variant and the engine fails to load at runtime.
+  // Pinning the target explicitly sidesteps that detection heuristic entirely.
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {

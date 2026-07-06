@@ -23,12 +23,21 @@ COPY packages/db/package.json packages/db/package.json
 COPY packages/logger/package.json packages/logger/package.json
 COPY packages/vendor-agents/package.json packages/vendor-agents/package.json
 COPY apps/worker/package.json apps/worker/package.json
+COPY apps/api/package.json apps/api/package.json
+COPY apps/web/package.json apps/web/package.json
 RUN npm ci
 
 # ---- build ----
 FROM base AS build
-COPY --from=deps /repo/node_modules ./node_modules
+# Copy the WHOLE deps-stage tree, not just /repo/node_modules — npm's dedupe/hoisting nests some
+# packages under a workspace's own node_modules (e.g. apps/worker/node_modules/ioredis, pinned to
+# match bullmq's bundled version exactly) instead of the root node_modules. The runtime stage below
+# copies /repo/apps/worker wholesale, so this is the only place that needs fixing for this Dockerfile.
+COPY --from=deps /repo ./
 COPY . .
+# `prisma generate` requires DATABASE_URL to be a syntactically valid value at build time even
+# though it never connects — the real value comes from the environment at container runtime.
+ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
 RUN npm run db:generate
 RUN npm run build -w packages/shared-types -w packages/sor-engine -w packages/db -w packages/logger -w packages/vendor-agents --if-present
 RUN npm run build -w apps/worker --if-present

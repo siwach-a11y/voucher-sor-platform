@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "deploy:pages": "PAGES_BASE_PATH=/voucher-sor-platform next build && gh-pages -d out --dotfiles -m \"Deploy static export [skip ci]\""
+    "deploy:pages": "PAGES_BASE_PATH=/voucher-sor-platform NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-https://voucher-sor-demo-api-962218194776.asia-southeast1.run.app} next build && gh-pages -d out --dotfiles -m \"Deploy static export [skip ci]\""
   },
   "dependencies": {
     "next": "^14.2.5",

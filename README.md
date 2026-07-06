@@ -11,6 +11,11 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full system design (s
 sequence/component diagrams, wireframes) and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the phased
 build-out plan.
 
+**Live demo:** https://siwach-a11y.github.io/voucher-sor-platform/ — a real, working demo (search,
+vendor comparison, buy, order tracking with a live status transition) backed by a free-tier Cloud
+Run deployment, not just a hosted static shell. See [Demo deployment](#demo-deployment) below for
+what that trades away vs. the real architecture.
+
 ## Prerequisites
 
 - Node.js 20+
@@ -60,6 +65,41 @@ The output in `apps/web/out/` can be deployed to any static host (GitHub Pages, 
 Pages, or the nginx-based `infra/docker/web.Dockerfile`/`infra/k8s/web-deployment.yaml`) as long as
 `apps/api` is reachable from the browser (CORS is already open). For a sub-path deployment (e.g.
 GitHub Pages project sites), set `PAGES_BASE_PATH=/repo-name` at build time.
+
+## Demo deployment
+
+The live demo is two pieces:
+
+1. **`apps/web`** — static export, deployed to GitHub Pages via `npm run deploy:pages -w apps/web`
+   (see [Static frontend build](#static-frontend-build) above), pointed at the demo API's URL.
+2. **A single free-tier Cloud Run container** (`infra/docker/api-demo.Dockerfile`) — bundles an
+   ephemeral Postgres *inside the same container* as `apps/api`, seeded fresh on every cold start,
+   and runs with `DEMO_MODE=true` so order execution happens synchronously in-request
+   (`apps/api/src/lib/demo-execution.ts`) instead of via BullMQ/a worker — there's no Redis, no
+   worker, no Playwright/Chromium in this image at all. This trades persistence (data resets on
+   cold start/restart) and real queue-based execution for near-zero cost. It is **not** what
+   `infra/docker/api.Dockerfile` + `infra/docker/worker.Dockerfile` + `infra/k8s/` describe — those
+   are the real, documented architecture (Cloud SQL + Memorystore + BullMQ workers + Playwright).
+
+To redeploy the demo API after a change:
+
+```bash
+npm run deploy:demo-api:build   # Cloud Build: infra/docker/api-demo.Dockerfile -> gcr.io image
+npm run deploy:demo-api:run     # gcloud run deploy voucher-sor-demo-api --allow-unauthenticated
+```
+
+`--allow-unauthenticated` is required — this is a public API with no session/API-key layer that a
+static frontend calls directly from anonymous browsers — but it's also a real access-control change,
+so it's called out explicitly here rather than being silent inside the script.
+
+Then rebuild and redeploy the frontend pointing at the (possibly new) Cloud Run URL:
+
+```bash
+PAGES_BASE_PATH=/voucher-sor-platform \
+  NEXT_PUBLIC_API_BASE_URL=https://voucher-sor-demo-api-962218194776.asia-southeast1.run.app \
+  npm run build -w apps/web
+npm run deploy:pages -w apps/web
+```
 
 ## Repo Layout
 

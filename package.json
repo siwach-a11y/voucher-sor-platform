@@ -17,7 +17,9 @@
     "db:generate": "npm run generate -w packages/db",
     "db:migrate": "npm run migrate -w packages/db",
     "docker:up": "docker compose -f infra/docker/docker-compose.yml up --build",
-    "docker:down": "docker compose -f infra/docker/docker-compose.yml down"
+    "docker:down": "docker compose -f infra/docker/docker-compose.yml down",
+    "deploy:demo-api:build": "gcloud builds submit --config=infra/docker/cloudbuild-demo-api.yaml --substitutions=_IMAGE=gcr.io/agent-hub-501104/voucher-sor-demo-api:latest --project=agent-hub-501104 .",
+    "deploy:demo-api:run": "gcloud run deploy voucher-sor-demo-api --image=gcr.io/agent-hub-501104/voucher-sor-demo-api:latest --region=asia-southeast1 --project=agent-hub-501104 --allow-unauthenticated --port=8080 --memory=512Mi --cpu=1 --min-instances=0 --max-instances=2 --timeout=60"
   },
   "devDependencies": {
     "typescript": "^5.5.4",

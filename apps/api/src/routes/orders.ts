@@ -7,6 +7,9 @@ import { logEvent } from "@voucher-sor/logger";
 import type { OrderExecutionEvent, OrderStatus } from "@voucher-sor/shared-types";
 import { loadScoringCandidates, toNumber } from "../lib/scoring-candidates.js";
 import { executionQueue } from "../queues.js";
+import { simulateExecution } from "../lib/demo-execution.js";
+
+const DEMO_MODE = process.env.DEMO_MODE === "true";
 
 /**
  * The worker never emits fine-grained OrderExecutionEvent steps (it calls ExecutionRouter.execute()
@@ -45,6 +48,14 @@ export async function ordersRoutes(fastify: FastifyInstance): Promise<void> {
     const product = await prisma.product.findUnique({ where: { id: productId } });
     if (!product) return reply.status(404).send({ error: "Product not found" });
 
+    // No signup/auth flow yet (see docs/ROADMAP.md) — the frontend sends a fixed userId with
+    // nothing to have created the row ahead of time, so provision it here rather than 404ing.
+    await prisma.user.upsert({
+      where: { id: userId },
+      update: {},
+      create: { id: userId, email: `${userId}@users.voucher-sor.local` },
+    });
+
     const { candidates, offers } = await loadScoringCandidates(productId);
     const decision = decideRoute(productId, candidates);
     const winningOffer = decision.selectedVendorId
@@ -63,7 +74,7 @@ export async function ordersRoutes(fastify: FastifyInstance): Promise<void> {
       },
     });
 
-    await prisma.routingLog.create({
+    const routingLog = await prisma.routingLog.create({
       data: {
         orderId: order.id,
         selectedVendorId: decision.selectedVendorId,
@@ -90,11 +101,20 @@ export async function ordersRoutes(fastify: FastifyInstance): Promise<void> {
     });
 
     if (decision.selectedVendorId) {
-      await executionQueue.add(
-        "execute-order",
-        { orderId: order.id },
-        { attempts: 3, backoff: { type: "exponential", delay: 5000 } },
-      );
+      if (DEMO_MODE) {
+        void simulateExecution({
+          orderId: order.id,
+          vendorId: decision.selectedVendorId,
+          routingLogId: routingLog.id,
+          price: winningOffer ? toNumber(winningOffer.price) : sellingPrice,
+        });
+      } else if (executionQueue) {
+        await executionQueue.add(
+          "execute-order",
+          { orderId: order.id },
+          { attempts: 3, backoff: { type: "exponential", delay: 5000 } },
+        );
+      }
     }
 
     return reply.status(201).send(serializeOrder(order));

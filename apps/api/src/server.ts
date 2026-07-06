@@ -14,7 +14,8 @@ await fastify.register(offersRoutes, { prefix: "/products" });
 await fastify.register(ordersRoutes, { prefix: "/orders" });
 await fastify.register(vendorsRoutes, { prefix: "/vendors" });
 
-const port = Number(process.env.API_PORT ?? 4000);
+// Cloud Run (and most PaaS hosts) inject PORT and expect the process to bind to it.
+const port = Number(process.env.PORT ?? process.env.API_PORT ?? 4000);
 
 fastify
   .listen({ port, host: "0.0.0.0" })
