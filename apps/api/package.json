@@ -1,0 +1,28 @@
+{
+  "name": "@voucher-sor/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -b",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "fastify": "^4.28.1",
+    "@fastify/cors": "^9.0.1",
+    "bullmq": "^5.12.0",
+    "ioredis": "5.10.1",
+    "zod": "^3.23.8",
+    "@voucher-sor/db": "*",
+    "@voucher-sor/shared-types": "*",
+    "@voucher-sor/sor-engine": "*",
+    "@voucher-sor/logger": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "tsx": "^4.16.2",
+    "@types/node": "^20.14.11"
+  }
+}

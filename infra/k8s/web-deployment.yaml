@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: voucher-sor
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: web
+          image: voucher-sor/web:latest
+          # web.Dockerfile's runtime stage is nginx serving the static export (output: "export"
+          # in next.config.mjs) — no Node server, no envFrom needed at runtime since
+          # NEXT_PUBLIC_API_BASE_URL is baked into the bundle at image-build time.
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 2
+            periodSeconds: 10

@@ -1,0 +1,93 @@
+# infra/docker/docker-compose.yml
+# Local/dev stack for the AI Voucher Smart Order Routing platform.
+# Run from the repo root via `npm run docker:up`, which invokes:
+#   docker compose -f infra/docker/docker-compose.yml up --build
+#
+# All services read secrets/config from the root `.env` (copy .env.example -> .env first).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: voucher
+      POSTGRES_PASSWORD: voucher
+      POSTGRES_DB: voucher_sor
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voucher -d voucher_sor"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/api.Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../../.env
+    environment:
+      # Override localhost URLs from .env.example with in-network service names.
+      DATABASE_URL: postgresql://voucher:voucher@postgres:5432/voucher_sor?schema=public
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+
+  worker:
+    build:
+      context: ../..
+      dockerfile: infra/docker/worker.Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../../.env
+    environment:
+      DATABASE_URL: postgresql://voucher:voucher@postgres:5432/voucher_sor?schema=public
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Chromium's use of /dev/shm for tab rendering quickly exceeds Docker's tiny 64MB default,
+    # crashing the browser mid-checkout ("Target closed" / SIGSEGV). 2GB gives enough headroom
+    # for several concurrent BullMQ execution-queue jobs, each holding its own browser context.
+    shm_size: 2gb
+    # No `ports:` — the worker has no HTTP server, it only consumes crawl/scoring/execution jobs.
+
+  web:
+    build:
+      context: ../..
+      dockerfile: infra/docker/web.Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:4000
+    restart: unless-stopped
+    env_file:
+      - ../../.env
+    depends_on:
+      - api
+    # web.Dockerfile's runtime stage is nginx serving the static export, listening on 80.
+    ports:
+      - "3000:80"
+
+volumes:
+  postgres-data:

@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "references": [
+    { "path": "../../packages/shared-types" },
+    { "path": "../../packages/sor-engine" },
+    { "path": "../../packages/logger" },
+    { "path": "../../packages/db" }
+  ],
+  "include": ["src"]
+}

@@ -1,0 +1,89 @@
+# apps/worker runs three BullMQ queues (crawl, scoring, execution) in one process. The execution
+# queue is the one that matters for sizing: each job launches an isolated Playwright BrowserContext
+# (see packages/vendor-agents ExecutionRouter) to complete a real checkout, and the worker's BullMQ
+# `concurrency` option controls how many of those browser contexts run at once *inside a single
+# pod*. Horizontal scale-out is therefore two dials multiplied together:
+#   total concurrent browsers = (worker pod replicas) x (BullMQ concurrency per pod)
+# The HPA below scales the replica count; BullMQ concurrency (an app-level env var/config, not a
+# k8s concept) tunes the per-pod multiplier. Chromium is memory-hungry (~300-500MB per active
+# context is a reasonable planning number), so `resources.limits.memory` must comfortably cover
+# concurrency x per-browser footprint or the pod gets OOMKilled mid-checkout — that's a failed
+# purchase and a partial-refund headache, not just a dropped request. Tune concurrency down before
+# tuning memory limits up.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: voucher-sor
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+        - name: worker
+          image: voucher-sor/worker:latest
+          envFrom:
+            - configMapRef:
+                name: voucher-sor-config
+            - secretRef:
+                name: voucher-sor-secrets
+          env:
+            # Concurrent browser contexts per pod. Keep low relative to memory limits — see
+            # rationale above. Read by apps/worker's BullMQ Worker() constructor options.
+            - name: EXECUTION_QUEUE_CONCURRENCY
+              value: "3"
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              # Sized for EXECUTION_QUEUE_CONCURRENCY=3 concurrent Chromium contexts at
+              # ~500Mi each, plus headroom for the Node process itself.
+              memory: 2Gi
+          volumeMounts:
+            - name: dshm
+              mountPath: /dev/shm
+      volumes:
+        # Chromium renders tabs via shared memory; the k8s default (64Mi via the container
+        # runtime) crashes the browser under real page load. Mount a proper-sized tmpfs, same
+        # rationale as `shm_size: 2gb` in infra/docker/docker-compose.yml.
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 2Gi
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: worker-hpa
+  namespace: voucher-sor
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: worker
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    # CPU is the simplest available signal out of the box. For a sharper signal, replace/augment
+    # this with a custom metric on BullMQ queue depth (e.g. via KEDA's Redis/BullMQ scaler,
+    # scaling on "waiting" jobs in the execution queue) so the platform adds worker pods when
+    # orders are backing up, not just when CPU is already saturated.
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300

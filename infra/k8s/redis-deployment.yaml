@@ -1,0 +1,46 @@
+# Redis backs the BullMQ queues (crawl, scoring, execution) shared by apps/api (producer) and
+# apps/worker (consumer). Single replica, no persistence tuning — reference architecture, not a
+# tuned production cache/queue backend. For production, consider a managed Redis with AOF/RDB
+# persistence so in-flight BullMQ jobs survive a restart.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: voucher-sor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 10
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: voucher-sor
+spec:
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      targetPort: 6379

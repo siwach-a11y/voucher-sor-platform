@@ -1,0 +1,29 @@
+{
+  "name": "voucher-sor-platform",
+  "private": true,
+  "version": "0.1.0",
+  "description": "AI Voucher Smart Order Routing platform — browser-automation-only marketplace that searches, scores, and purchases digital vouchers across suppliers with no APIs.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "dev:api": "npm run dev -w apps/api",
+    "dev:web": "npm run dev -w apps/web",
+    "dev:worker": "npm run dev -w apps/worker",
+    "db:generate": "npm run generate -w packages/db",
+    "db:migrate": "npm run migrate -w packages/db",
+    "docker:up": "docker compose -f infra/docker/docker-compose.yml up --build",
+    "docker:down": "docker compose -f infra/docker/docker-compose.yml down"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "@types/node": "^20.14.11"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

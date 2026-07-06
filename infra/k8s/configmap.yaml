@@ -1,0 +1,13 @@
+# Non-secret configuration shared by api/worker/web. Secrets (DB password, JWT_SECRET,
+# PAYMENT_PROVIDER_API_KEY, webhook URLs) live in secret.yaml, never here.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: voucher-sor-config
+  namespace: voucher-sor
+data:
+  API_PORT: "4000"
+  NEXT_PUBLIC_API_BASE_URL: "http://api-service.voucher-sor.svc.cluster.local:4000"
+  CRAWL_INTERVAL_MINUTES: "10"
+  SCORING_RECALC_INTERVAL_MINUTES: "5"
+  REDIS_URL: "redis://redis-service.voucher-sor.svc.cluster.local:6379"

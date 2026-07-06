@@ -1,0 +1,188 @@
+// Voucher SOR platform — Prisma schema
+// Mirrors packages/shared-types 1:1. JSON columns hold structures already typed there
+// (ScoreBreakdown[], VoucherPayload) rather than re-normalizing into more tables.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum StockStatus {
+  confirmed
+  recently_scraped
+  unknown
+  previously_failed
+  out_of_stock
+}
+
+enum OrderStatus {
+  pending
+  routing
+  executing
+  awaiting_user_approval
+  paid
+  extracting_voucher
+  completed
+  failed
+  cancelled
+}
+
+enum ExecutionResultStatus {
+  success
+  failure
+  pending
+}
+
+enum EventType {
+  crawl
+  checkout_duration
+  browser_crash
+  captcha
+  payment_failure
+  voucher_extraction_failure
+  routing_decision
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  orders Order[]
+
+  @@map("users")
+}
+
+model Product {
+  id        String   @id @default(cuid())
+  name      String
+  brand     String
+  country   String
+  category  String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  offers Offer[]
+  orders Order[]
+
+  @@index([brand, country])
+  @@map("products")
+}
+
+model Vendor {
+  id        String   @id @default(cuid())
+  name      String
+  website   String
+  priority  Int      @default(100)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  offers        Offer[]
+  orders        Order[]
+  stats         VendorStats?
+  routingChosen RoutingLog[] @relation("SelectedVendor")
+
+  @@map("vendors")
+}
+
+/// Rolling operational stats (last 500 orders / executions) feeding SuccessRate & Reliability scores.
+model VendorStats {
+  vendorId                String      @id @map("vendor_id")
+  vendor                  Vendor      @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  successfulOrders        Int         @default(0) @map("successful_orders")
+  totalOrders             Int         @default(0) @map("total_orders")
+  successfulExecutions    Int         @default(0) @map("successful_executions")
+  totalExecutions         Int         @default(0) @map("total_executions")
+  averageCheckoutTimeMs   Int         @default(0) @map("average_checkout_time_ms")
+  lastCaptchaLevel        String      @default("none") @map("last_captcha_level")
+  lastCheckoutFailed      Boolean     @default(false) @map("last_checkout_failed")
+  updatedAt               DateTime    @updatedAt @map("updated_at")
+
+  @@map("vendor_stats")
+}
+
+model Offer {
+  id                       String      @id @default(cuid())
+  vendorId                 String      @map("vendor_id")
+  productId                String      @map("product_id")
+  price                    Decimal     @db.Decimal(12, 2)
+  currency                 String
+  stockStatus              StockStatus @default(unknown) @map("stock_status")
+  stockConfidence          Float       @default(0.5) @map("stock_confidence")
+  checkoutSpeedMs          Int         @default(0) @map("checkout_speed_ms")
+  riskScore                Float       @default(0) @map("risk_score")
+  successRate              Float       @default(0) @map("success_rate")
+  finalScore               Float?      @map("final_score")
+  paymentMethods           String[]    @map("payment_methods")
+  checkoutAvailable        Boolean     @default(true) @map("checkout_available")
+  estimatedDeliveryMinutes Int?        @map("estimated_delivery_minutes")
+  lastUpdated              DateTime    @default(now()) @map("last_updated")
+
+  vendor  Vendor  @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorId, productId])
+  @@index([productId, finalScore])
+  @@map("offers")
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  userId          String      @map("user_id")
+  vendorId        String?     @map("vendor_id")
+  productId       String      @map("product_id")
+  status          OrderStatus @default(pending)
+  purchasePrice   Decimal?    @db.Decimal(12, 2) @map("purchase_price")
+  sellingPrice    Decimal     @db.Decimal(12, 2) @map("selling_price")
+  currency        String      @default("USD")
+  voucher         Json?
+  executionTimeMs Int?        @map("execution_time_ms")
+  failureReason   String?     @map("failure_reason")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  user        User         @relation(fields: [userId], references: [id])
+  vendor      Vendor?      @relation(fields: [vendorId], references: [id])
+  product     Product      @relation(fields: [productId], references: [id])
+  routingLogs RoutingLog[]
+
+  @@index([userId, createdAt])
+  @@map("orders")
+}
+
+/// Immutable audit trail of every SOR decision: which vendor won, and why, with the full candidate list.
+model RoutingLog {
+  id               String                 @id @default(cuid())
+  orderId          String                 @map("order_id")
+  selectedVendorId String?                @map("selected_vendor_id")
+  candidateScores  Json                   @map("candidate_scores")
+  decisionReason   String                 @map("decision_reason")
+  executionResult  ExecutionResultStatus  @default(pending) @map("execution_result")
+  createdAt        DateTime               @default(now()) @map("created_at")
+
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  selectedVendor Vendor? @relation("SelectedVendor", fields: [selectedVendorId], references: [id])
+
+  @@index([orderId])
+  @@map("routing_logs")
+}
+
+/// Structured operational log: crawl timings, browser crashes, CAPTCHA events, payment/voucher failures.
+model EventLog {
+  id        String    @id @default(cuid())
+  type      EventType
+  vendorId  String?   @map("vendor_id")
+  orderId   String?   @map("order_id")
+  message   String
+  metadata  Json?
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([type, createdAt])
+  @@index([vendorId, createdAt])
+  @@map("event_logs")
+}

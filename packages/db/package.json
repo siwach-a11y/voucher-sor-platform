@@ -1,0 +1,25 @@
+{
+  "name": "@voucher-sor/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/client.js",
+  "types": "./dist/client.d.ts",
+  "scripts": {
+    "generate": "prisma generate",
+    "migrate": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "studio": "prisma studio",
+    "seed": "tsx src/seed.ts",
+    "build": "prisma generate && tsc -b",
+    "dev": "tsc -b -w"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.18.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.18.0",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.4"
+  }
+}

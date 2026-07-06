@@ -1,0 +1,69 @@
+# DEV/REFERENCE ONLY. In production, do not run Postgres as a StatefulSet on the same cluster —
+# use a managed service (RDS/Cloud SQL/Neon/etc.) with automated backups, PITR, and failover, and
+# point DATABASE_URL (in secret.yaml) at that instead. This manifest exists so the whole stack can
+# be stood up on a bare cluster (e.g. kind/minikube) for demos and integration testing.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: voucher-sor
+spec:
+  serviceName: postgres-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: voucher
+            - name: POSTGRES_DB
+              value: voucher_sor
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: voucher-sor-secrets
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "voucher", "-d", "voucher_sor"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "voucher", "-d", "voucher_sor"]
+            initialDelaySeconds: 15
+            periodSeconds: 20
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: voucher-sor
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+  clusterIP: None # headless, matches StatefulSet
