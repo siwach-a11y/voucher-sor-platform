@@ -1,0 +1,17 @@
+# Example framework configuration. Copy this into your own project and list the connector ids
+# your project actually registers — the framework ships with none.
+connectors:
+  enabled:
+    - connector-id
+
+routing:
+  weights:
+    price: 0.35
+    success: 0.25
+    speed: 0.15
+    reliability: 0.15
+    risk: 0.10
+
+execution:
+  maxAttempts: 2
+  timeoutMs: 60000
