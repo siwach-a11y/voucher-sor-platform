@@ -6,6 +6,7 @@ export interface MatchableAttributes {
   faceValue: number
   currency: string
   voucherType: VoucherListing['voucherType']
+  country: string
   redemptionChannel?: string
   geographicRestriction?: string
 }
@@ -61,6 +62,10 @@ function findHardMismatch(a: MatchableAttributes, b: MatchableAttributes): strin
   if (a.voucherType !== 'unknown' && b.voucherType !== 'unknown' && a.voucherType !== b.voucherType) {
     return 'Digital vs. physical delivery changes usability'
   }
+  // Structured country mismatch takes priority over the free-text geographicRestriction heuristic
+  // below — every listing now carries an explicit country, a far more reliable signal than parsing
+  // restriction strings.
+  if (normalize(a.country) !== normalize(b.country)) return 'Different country market'
   if (geographicCompatibility(a, b) <= 0.4) return 'Different geographic redemption market'
   return undefined
 }
@@ -118,6 +123,7 @@ export function toMatchableAttributes(listing: VoucherListing): MatchableAttribu
     faceValue: listing.faceValue,
     currency: listing.currency,
     voucherType: listing.voucherType,
+    country: listing.country,
     redemptionChannel: listing.redemptionChannel,
     geographicRestriction: listing.geographicRestriction,
   }

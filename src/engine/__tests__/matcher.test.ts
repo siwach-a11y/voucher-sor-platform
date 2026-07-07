@@ -7,6 +7,7 @@ function attrs(overrides: Partial<MatchableAttributes> = {}): MatchableAttribute
     faceValue: 500,
     currency: 'THB',
     voucherType: 'digital',
+    country: 'Thailand',
     redemptionChannel: 'In-store and app',
     geographicRestriction: 'Thailand only',
     ...overrides,
@@ -46,6 +47,13 @@ describe('calculateMatchScore', () => {
     const result = calculateMatchScore(attrs({ currency: 'THB' }), attrs({ currency: 'USD' }))
     expect(result.hardMismatch).toBe(true)
     expect(result.hardMismatchReason).toMatch(/currency|currencies/i)
+  })
+
+  it('hard-mismatches the same brand/face value listed in two different country markets', () => {
+    const result = calculateMatchScore(attrs({ country: 'Thailand' }), attrs({ country: 'Philippines' }))
+    expect(result.hardMismatch).toBe(true)
+    expect(result.hardMismatchReason).toMatch(/country/i)
+    expect(result.label).toBe('NO_MATCH')
   })
 
   it('treats an unknown voucher type as partial credit, not an automatic mismatch', () => {

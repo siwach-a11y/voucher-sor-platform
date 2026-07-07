@@ -26,6 +26,7 @@ export function VoucherResultList({ groups, rankingMode, selectedListingId, onSe
             <div className="mb-3 flex items-baseline justify-between">
               <h2 className="text-base font-semibold text-navy-900">
                 {group.brand} — {group.voucherName}
+                <span className="ml-2 text-xs font-normal text-gray-400">{group.country}</span>
               </h2>
               <p className="text-xs text-gray-500">
                 From {formatMoney(cheapest, group.currency)} · {group.listings.length} verified listing{group.listings.length === 1 ? '' : 's'}

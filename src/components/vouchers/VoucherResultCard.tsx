@@ -4,6 +4,7 @@ import { formatRelativeTime } from '@/utils/date'
 import { AvailabilityBadge } from '@/components/vouchers/AvailabilityBadge'
 import { ConfidenceBadge } from '@/components/vouchers/ConfidenceBadge'
 import { SavingsBadge } from '@/components/vouchers/SavingsBadge'
+import { TierBadge } from '@/components/vouchers/TierBadge'
 import { classifyConfidence } from '@/engine/confidence'
 import { Button } from '@/components/common/Button'
 import { Badge } from '@/components/common/Badge'
@@ -46,6 +47,7 @@ export function VoucherResultCard({ listing, rank, badge, isSelected, onSelect, 
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-medium text-navy-900">{listing.voucherName}</p>
             {badge && <Badge tone="accent">{BADGE_LABEL[badge]}</Badge>}
+            <TierBadge tier={listing.loyaltyTier} />
           </div>
           <p className="mt-0.5 text-xs text-gray-500">
             {listing.voucherType === 'digital' ? 'Digital' : listing.voucherType === 'physical' ? 'Physical' : 'Format unknown'} ·{' '}
@@ -56,6 +58,7 @@ export function VoucherResultCard({ listing, rank, badge, isSelected, onSelect, 
             <AvailabilityBadge status={listing.availabilityStatus} />
             <ConfidenceBadge label={confidenceLabel} compact />
             <span className="text-[11px] text-gray-400">Checked {formatRelativeTime(listing.lastCheckedAt)}</span>
+            {listing.loyaltyPoints != null && <span className="text-[11px] text-gray-400">· {listing.loyaltyPoints.toLocaleString()} pts</span>}
           </div>
         </div>
 

@@ -1,5 +1,7 @@
-import type { RankingMode } from '@/types'
+import type { LoyaltyTier, RankingMode } from '@/types'
 import { MOCK_SOURCES } from '@/data/mockSources'
+
+const ALL_TIERS: LoyaltyTier[] = ['Silver', 'Gold', 'Platinum']
 
 export interface SearchFilterState {
   rankingMode: RankingMode
@@ -7,6 +9,7 @@ export interface SearchFilterState {
   minPrice: number | null
   maxPrice: number | null
   disabledSourceIds: Set<string>
+  selectedTiers: Set<LoyaltyTier>
 }
 
 export const DEFAULT_SEARCH_FILTERS: SearchFilterState = {
@@ -15,6 +18,7 @@ export const DEFAULT_SEARCH_FILTERS: SearchFilterState = {
   minPrice: null,
   maxPrice: null,
   disabledSourceIds: new Set(),
+  selectedTiers: new Set(ALL_TIERS),
 }
 
 const RANKING_MODE_OPTIONS: Array<{ value: RankingMode; label: string }> = [
@@ -34,6 +38,13 @@ export function SearchFilters({ filters, onChange }: SearchFiltersProps) {
     if (next.has(sourceId)) next.delete(sourceId)
     else next.add(sourceId)
     onChange({ ...filters, disabledSourceIds: next })
+  }
+
+  function toggleTier(tier: LoyaltyTier) {
+    const next = new Set(filters.selectedTiers)
+    if (next.has(tier)) next.delete(tier)
+    else next.add(tier)
+    onChange({ ...filters, selectedTiers: next })
   }
 
   return (
@@ -77,11 +88,21 @@ export function SearchFilters({ filters, onChange }: SearchFiltersProps) {
         />
       </div>
 
+      <div className="flex items-center gap-1.5 text-navy-700">
+        Tier
+        {ALL_TIERS.map((tier) => (
+          <label key={tier} className="flex items-center gap-1 text-xs">
+            <input type="checkbox" checked={filters.selectedTiers.has(tier)} onChange={() => toggleTier(tier)} />
+            {tier}
+          </label>
+        ))}
+      </div>
+
       <details className="relative">
         <summary className="cursor-pointer list-none rounded-md border border-gray-300 px-2.5 py-1 text-navy-700 hover:border-navy-700">
           Sources ({MOCK_SOURCES.length - filters.disabledSourceIds.size}/{MOCK_SOURCES.length})
         </summary>
-        <div className="absolute z-10 mt-1 w-56 rounded-md border border-gray-200 bg-white p-2 shadow-lg">
+        <div className="thin-scrollbar absolute z-10 mt-1 max-h-64 w-64 overflow-y-auto rounded-md border border-gray-200 bg-white p-2 shadow-lg">
           {MOCK_SOURCES.map((source) => (
             <label key={source.id} className="flex items-center gap-2 rounded px-2 py-1 text-xs hover:bg-gray-50">
               <input type="checkbox" checked={!filters.disabledSourceIds.has(source.id)} onChange={() => toggleSource(source.id)} />

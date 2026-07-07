@@ -6,6 +6,7 @@ import { useWatchlist } from '@/hooks/useWatchlist'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { SearchBar } from '@/components/search/SearchBar'
 import { CategoryTabs } from '@/components/search/CategoryTabs'
+import { CountryTabs } from '@/components/search/CountryTabs'
 import { SearchFilters, DEFAULT_SEARCH_FILTERS, type SearchFilterState } from '@/components/search/SearchFilters'
 import { SearchSummary } from '@/components/search/SearchSummary'
 import { VoucherResultList } from '@/components/vouchers/VoucherResultList'
@@ -18,9 +19,10 @@ import { MOCK_SOURCES } from '@/data/mockSources'
 
 const SOURCE_ID_BY_DOMAIN = new Map(MOCK_SOURCES.map((s) => [s.domain, s.id]))
 
-function applyFilters(groups: VoucherGroup[], category: string, filters: SearchFilterState): VoucherGroup[] {
+function applyFilters(groups: VoucherGroup[], category: string, country: string, filters: SearchFilterState): VoucherGroup[] {
   return groups
     .filter((group) => category === 'all' || group.category === category)
+    .filter((group) => country === 'all' || group.country === country)
     .map((group) => ({
       ...group,
       listings: group.listings.filter((listing) => {
@@ -28,6 +30,7 @@ function applyFilters(groups: VoucherGroup[], category: string, filters: SearchF
           const sourceId = SOURCE_ID_BY_DOMAIN.get(listing.sourceDomain)
           if (sourceId && filters.disabledSourceIds.has(sourceId)) return false
         }
+        if (!filters.selectedTiers.has(listing.loyaltyTier)) return false
         if (filters.liveOnly && listing.availabilityStatus !== 'LIVE') return false
         if (filters.minPrice != null && listing.totalCost < filters.minPrice) return false
         if (filters.maxPrice != null && listing.totalCost > filters.maxPrice) return false
@@ -44,6 +47,7 @@ export function SearchPage() {
   const isDesktop = useMediaQuery('(min-width: 1280px)')
 
   const [category, setCategory] = useState('all')
+  const [country, setCountry] = useState('all')
   const [filters, setFilters] = useState<SearchFilterState>(DEFAULT_SEARCH_FILTERS)
   const [selectedListing, setSelectedListing] = useState<VoucherListing | null>(null)
   const [buyWarning, setBuyWarning] = useState<string | null>(null)
@@ -57,8 +61,8 @@ export function SearchPage() {
   }, [initialQuery])
 
   const filteredGroups = useMemo(
-    () => (response ? applyFilters(response.groups, category, filters) : []),
-    [response, category, filters],
+    () => (response ? applyFilters(response.groups, category, country, filters) : []),
+    [response, category, country, filters],
   )
 
   const selectedGroup = selectedListing
@@ -88,6 +92,7 @@ export function SearchPage() {
           <SearchBar initialQuery={initialQuery} onSearch={handleSearch} />
 
           <div className="mt-4 flex flex-col gap-3">
+            <CountryTabs selected={country} onSelect={setCountry} />
             <CategoryTabs selected={category} onSelect={setCategory} />
             <SearchFilters filters={filters} onChange={setFilters} />
           </div>
@@ -139,7 +144,7 @@ export function SearchPage() {
             )}
 
             {!hasSearched && !isLoading && (
-              <EmptyResults title="Search for a voucher to get started" description='Try "Starbucks voucher 500" or "PlayStation gift card 1000 baht digital".' />
+              <EmptyResults title="Search for a voucher to get started" description='Try "Starbucks voucher 500 Thailand" or "FreshMart grocery card Philippines".' />
             )}
           </div>
         </div>

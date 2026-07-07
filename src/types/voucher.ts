@@ -10,6 +10,9 @@ export type ConfidenceLabel = 'VERY_HIGH' | 'HIGH' | 'MEDIUM' | 'LOW'
 
 export type MatchLabel = 'EXACT_MATCH' | 'COMPARABLE_MATCH' | 'POSSIBLE_MATCH' | 'NO_MATCH'
 
+/** Loyalty-catalog tier the deal belongs to. */
+export type LoyaltyTier = 'Silver' | 'Gold' | 'Platinum'
+
 /**
  * A single real listing discovered from one external source, normalized into VoucherHub's
  * internal schema. Every field here must trace back to observed source evidence — see
@@ -24,6 +27,10 @@ export interface VoucherListing {
   category: string
   subcategory?: string
   voucherType: VoucherType
+  country: string
+  loyaltyTier: LoyaltyTier
+  /** Undefined, not 0, when the source doesn't report a points value — 0 would falsely claim "no points offered". */
+  loyaltyPoints?: number
   faceValue: number
   currency: string
   sellingPrice: number
@@ -60,6 +67,7 @@ export interface VoucherGroup {
   brand: string
   voucherName: string
   category: string
+  country: string
   faceValue: number
   currency: string
   listings: VoucherListing[]

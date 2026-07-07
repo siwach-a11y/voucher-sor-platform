@@ -8,6 +8,7 @@ import { classifyConfidence } from '@/engine/confidence'
 import { AvailabilityBadge } from '@/components/vouchers/AvailabilityBadge'
 import { ConfidenceBadge } from '@/components/vouchers/ConfidenceBadge'
 import { PriceComparisonTable } from '@/components/vouchers/PriceComparisonTable'
+import { TierBadge } from '@/components/vouchers/TierBadge'
 import { Button } from '@/components/common/Button'
 import { ChevronDown, ExternalLink, Star } from 'lucide-react'
 
@@ -31,9 +32,13 @@ export function VoucherDetailPanel({ listing, group, rankingMode, onBuy, onToggl
   return (
     <div className="flex h-full flex-col p-5">
       <p className="text-xs text-gray-400">{listing.sourceName}</p>
-      <h2 className="text-lg font-semibold text-navy-900">{listing.voucherName}</h2>
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="text-lg font-semibold text-navy-900">{listing.voucherName}</h2>
+        <TierBadge tier={listing.loyaltyTier} />
+      </div>
       <p className="mt-0.5 text-xs text-gray-500">
-        Sold by {listing.sellerName} ({listing.sellerType})
+        Sold by {listing.sellerName} ({listing.sellerType}) · {listing.country}
+        {listing.loyaltyPoints != null && ` · ${listing.loyaltyPoints.toLocaleString()} loyalty points`}
       </p>
 
       <div className="mt-4 rounded-lg bg-gray-50 p-4">

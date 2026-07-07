@@ -13,9 +13,10 @@ function matchesIntent(template: MockListingTemplate, intent: SearchIntent): boo
   if (intent.brand && template.brand.toLowerCase() !== intent.brand.toLowerCase()) return false
   if (intent.category && template.category !== intent.category) return false
   if (intent.voucherType && intent.voucherType !== 'unknown' && template.voucherType !== intent.voucherType) return false
+  if (intent.country && template.country.toLowerCase() !== intent.country.toLowerCase()) return false
 
   const query = intent.rawQuery.trim().toLowerCase()
-  if (!intent.brand && !intent.category) {
+  if (!intent.brand && !intent.category && !intent.country) {
     // No structured signal extracted — fall back to plain substring search over brand/voucher name.
     const haystack = `${template.brand} ${template.voucherName}`.toLowerCase()
     if (query && !haystack.includes(query) && !query.split(/\s+/).some((word) => haystack.includes(word))) {
@@ -90,6 +91,9 @@ export class MockSourceAdapter implements SourceAdapter {
       category: template.category,
       subcategory: template.subcategory,
       voucherType: template.voucherType,
+      country: template.country,
+      loyaltyTier: template.loyaltyTier,
+      loyaltyPoints: template.loyaltyPoints,
       faceValue: template.faceValue,
       currency: template.currency,
       sellingPrice: template.sellingPrice,

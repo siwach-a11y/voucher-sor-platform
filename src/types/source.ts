@@ -1,5 +1,5 @@
 import type { SearchIntent } from './search'
-import type { SellerType, SourceSpeed, VoucherType } from './voucher'
+import type { LoyaltyTier, SellerType, SourceSpeed, VoucherType } from './voucher'
 
 /** Raw shape every source adapter returns, before validation/normalization. See spec §28. */
 export interface RawListing {
@@ -12,6 +12,9 @@ export interface RawListing {
   category: string
   subcategory?: string
   voucherType: VoucherType
+  country: string
+  loyaltyTier: LoyaltyTier
+  loyaltyPoints?: number
   faceValue: number
   currency: string
   sellingPrice: number

@@ -88,6 +88,7 @@ function groupListings(pairs: NormalizedPair[]): VoucherGroup[] {
       brand: sample.brand,
       voucherName: sample.voucherName,
       category: sample.category,
+      country: sample.country,
       faceValue: sample.faceValue,
       currency: sample.currency,
       listings: rankListings(
