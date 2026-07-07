@@ -3,6 +3,7 @@ import type { MockAdapterBehavior } from '@/adapters/types'
 import type { MockListingTemplate } from '@/data/mockListings'
 import { MOCK_LISTINGS } from '@/data/mockListings'
 import { getMockSource } from '@/data/mockSources'
+import { categoryLabel } from '@/data/categories'
 import { isValidUrl } from '@/utils/url'
 
 function delay(ms: number): Promise<void> {
@@ -27,19 +28,30 @@ function matchesIntent(template: MockListingTemplate, intent: SearchIntent): boo
 }
 
 /**
- * The mock source names/domains (giftflow.market, dealcrate.co, ...) are display-only branding —
- * none of them are real, registered domains, so a "Buy at Store" link built from them would either
- * hit a DNS error or, worse, land on an unrelated site some third party happens to actually own.
- * Real vendor integrations don't exist yet in V1 (spec §6).
+ * The mock source names/domains (giftflow.market, dealcrate.co, ...) AND the brand names in this
+ * fictional catalogue (FreshMart, Ceylon Horizon Hotels, ...) are all invented — a link built from
+ * either would either hit a DNS error or, worse, search for something that will never exist on any
+ * real site. So the query drops the fictional brand entirely and searches by CATEGORY + country
+ * instead, which reliably surfaces real, relevant results.
  *
- * Routes to Eneba's own on-site search — a real, live gift-card/voucher marketplace (not a search
- * engine) — instead of the fictional vendor's page. This lands on an actual shopping site with real
- * buy buttons, even though it won't have the exact fictional listing. The query drops the fictional
- * source name (it only pollutes results for a company that doesn't exist) and keeps brand + country.
+ * Gaming and digital-subscription categories route to Eneba's own on-site search — a real, live
+ * marketplace that genuinely sells this kind of product — landing on an actual shopping site rather
+ * than a search engine. Every other category (travel, groceries, furniture, dining, ...) has no
+ * single real marketplace that plausibly covers all 7 target countries, so those fall back to a
+ * general web search by category + country, which surfaces real regional vendors for that category.
  */
-function toListingUrl(brand: string, country: string): string {
-  const query = `${brand} gift card ${country}`
-  return `https://www.eneba.com/search?text=${encodeURIComponent(query)}`
+const MARKETPLACE_CATEGORIES = new Set(['gaming', 'digital_subscriptions'])
+
+function toListingUrl(category: string, country: string): string {
+  const label = categoryLabel(category)
+
+  if (MARKETPLACE_CATEGORIES.has(category)) {
+    const query = `${label} gift card ${country}`
+    return `https://www.eneba.com/search?text=${encodeURIComponent(query)}`
+  }
+
+  const query = `${label} gift voucher ${country} buy online`
+  return `https://www.google.com/search?q=${encodeURIComponent(query)}`
 }
 
 /**
@@ -89,7 +101,7 @@ export class MockSourceAdapter implements SourceAdapter {
       sourceDomain: source.domain,
       sourceSpeed: source.speed,
       listingTitle: template.voucherName,
-      listingUrl: toListingUrl(template.brand, template.country),
+      listingUrl: toListingUrl(template.category, template.country),
       brand: template.brand,
       category: template.category,
       subcategory: template.subcategory,
