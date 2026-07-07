@@ -3,6 +3,7 @@ import { createHashRouter } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { SearchPage } from '@/pages/SearchPage'
+import { SourcingPage } from '@/pages/SourcingPage'
 import { WatchlistPage } from '@/pages/WatchlistPage'
 import { AlertsPage } from '@/pages/AlertsPage'
 import { CategoriesPage } from '@/pages/CategoriesPage'
@@ -16,6 +17,7 @@ function withShell(page: ReactNode) {
 export const router = createHashRouter([
   { path: '/', element: withShell(<DashboardPage />) },
   { path: '/search', element: withShell(<SearchPage />) },
+  { path: '/sourcing', element: withShell(<SourcingPage />) },
   { path: '/watchlist', element: withShell(<WatchlistPage />) },
   { path: '/alerts', element: withShell(<AlertsPage />) },
   { path: '/categories', element: withShell(<CategoriesPage />) },

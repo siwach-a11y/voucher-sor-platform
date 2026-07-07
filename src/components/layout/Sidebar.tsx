@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom'
-import { Bell, Clock, LayoutDashboard, LayoutGrid, Search, Settings, Star } from 'lucide-react'
+import { Bell, Clock, Globe, LayoutDashboard, LayoutGrid, Search, Settings, Star } from 'lucide-react'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/search', label: 'Search', icon: Search },
+  { to: '/sourcing', label: 'Global Sourcing', icon: Globe },
   { to: '/watchlist', label: 'Watchlist', icon: Star },
   { to: '/alerts', label: 'Price Alerts', icon: Bell },
   { to: '/categories', label: 'Categories', icon: LayoutGrid },
