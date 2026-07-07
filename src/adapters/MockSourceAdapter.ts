@@ -1,4 +1,4 @@
-import type { RawListing, SearchIntent, SourceAdapter, VoucherType } from '@/types'
+import type { RawListing, SearchIntent, SourceAdapter } from '@/types'
 import type { MockAdapterBehavior } from '@/adapters/types'
 import type { MockListingTemplate } from '@/data/mockListings'
 import { MOCK_LISTINGS } from '@/data/mockListings'
@@ -32,16 +32,14 @@ function matchesIntent(template: MockListingTemplate, intent: SearchIntent): boo
  * hit a DNS error or, worse, land on an unrelated site some third party happens to actually own.
  * Real vendor integrations don't exist yet in V1 (spec §6).
  *
- * The query deliberately drops the fictional source/vendor name (it only pollutes real search
- * results with a company that doesn't exist) and keeps brand + country instead — for a real brand
- * (Starbucks, PlayStation, Steam) this reliably surfaces that brand's actual page; for a fictional
- * brand it still surfaces real, live marketplaces for that voucher category in that market. Landing
- * on Google Shopping rather than a plain web search puts real, purchasable listings front and
- * center instead of an intermediate search-results/AI-overview page.
+ * Routes to Eneba's own on-site search — a real, live gift-card/voucher marketplace (not a search
+ * engine) — instead of the fictional vendor's page. This lands on an actual shopping site with real
+ * buy buttons, even though it won't have the exact fictional listing. The query drops the fictional
+ * source name (it only pollutes results for a company that doesn't exist) and keeps brand + country.
  */
-function toListingUrl(brand: string, country: string, voucherType: VoucherType): string {
-  const query = `${brand} gift voucher ${country} buy online ${voucherType === 'digital' ? 'digital' : ''}`.trim()
-  return `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(query)}`
+function toListingUrl(brand: string, country: string): string {
+  const query = `${brand} gift card ${country}`
+  return `https://www.eneba.com/search?text=${encodeURIComponent(query)}`
 }
 
 /**
@@ -79,7 +77,7 @@ export class MockSourceAdapter implements SourceAdapter {
 
   async validate(url: string): Promise<boolean> {
     await delay(20)
-    // Mock listing URLs are a real Google Shopping search (see toListingUrl), not built from
+    // Mock listing URLs are a real marketplace search (see toListingUrl), not built from
     // this.domain, which is display-only branding, not a real registered domain.
     return isValidUrl(url)
   }
@@ -91,7 +89,7 @@ export class MockSourceAdapter implements SourceAdapter {
       sourceDomain: source.domain,
       sourceSpeed: source.speed,
       listingTitle: template.voucherName,
-      listingUrl: toListingUrl(template.brand, template.country, template.voucherType),
+      listingUrl: toListingUrl(template.brand, template.country),
       brand: template.brand,
       category: template.category,
       subcategory: template.subcategory,
