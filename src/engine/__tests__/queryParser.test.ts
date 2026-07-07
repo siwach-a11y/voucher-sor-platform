@@ -3,12 +3,12 @@ import { parseSearchQuery } from '@/engine/queryParser'
 
 describe('parseSearchQuery', () => {
   it('extracts brand, face value, category, and country from a query naming the market', () => {
-    const intent = parseSearchQuery('Starbucks voucher 500 Thailand')
+    const intent = parseSearchQuery('Starbucks voucher 500 Sri Lanka')
     expect(intent.brand).toBe('Starbucks')
     expect(intent.faceValue).toBe(500)
     expect(intent.category).toBe('dining')
-    expect(intent.country).toBe('Thailand')
-    expect(intent.currency).toBe('THB')
+    expect(intent.country).toBe('Sri Lanka')
+    expect(intent.currency).toBe('LKR')
   })
 
   it('detects digital voucher type from keywords', () => {
@@ -20,9 +20,9 @@ describe('parseSearchQuery', () => {
   })
 
   it('infers the country from a currency code even when the country name is absent', () => {
-    const intent = parseSearchQuery('FreshMart grocery 1500 PHP')
-    expect(intent.country).toBe('Philippines')
-    expect(intent.currency).toBe('PHP')
+    const intent = parseSearchQuery('FreshMart grocery 1500 IDR')
+    expect(intent.country).toBe('Indonesia')
+    expect(intent.currency).toBe('IDR')
   })
 
   it('does not fabricate a brand, face value, or country when none is present', () => {

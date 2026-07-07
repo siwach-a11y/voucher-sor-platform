@@ -12,7 +12,7 @@ describe('searchService.search (full pipeline integration)', () => {
     vi.restoreAllMocks()
   })
 
-  it('finds the Starbucks THB 500 group and ranks the live cheapest listing first', async () => {
+  it('finds the Starbucks LKR 500 group and ranks the live cheapest listing first', async () => {
     const response = await search('Starbucks voucher 500')
 
     expect(response.intent.brand).toBe('Starbucks')
@@ -30,7 +30,7 @@ describe('searchService.search (full pipeline integration)', () => {
     expect(group!.listings[0]!.totalCost).not.toBe(450)
   })
 
-  it('never groups the THB 500 and THB 1000 Starbucks vouchers together (hard mismatch on face value)', async () => {
+  it('never groups the LKR 500 and LKR 1000 Starbucks vouchers together (hard mismatch on face value)', async () => {
     const response = await search('Starbucks')
     const groups = response.groups.filter((g) => g.brand === 'Starbucks')
     expect(groups.length).toBeGreaterThanOrEqual(2)

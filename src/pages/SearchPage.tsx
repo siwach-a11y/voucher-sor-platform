@@ -144,7 +144,7 @@ export function SearchPage() {
             )}
 
             {!hasSearched && !isLoading && (
-              <EmptyResults title="Search for a voucher to get started" description='Try "Starbucks voucher 500 Thailand" or "FreshMart grocery card Philippines".' />
+              <EmptyResults title="Search for a voucher to get started" description='Try "Starbucks voucher 500 Sri Lanka" or "FreshMart grocery card Indonesia".' />
             )}
           </div>
         </div>

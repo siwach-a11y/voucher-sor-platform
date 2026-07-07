@@ -5,11 +5,11 @@ function attrs(overrides: Partial<MatchableAttributes> = {}): MatchableAttribute
   return {
     brand: 'Starbucks',
     faceValue: 500,
-    currency: 'THB',
+    currency: 'LKR',
     voucherType: 'digital',
-    country: 'Thailand',
+    country: 'Sri Lanka',
     redemptionChannel: 'In-store and app',
-    geographicRestriction: 'Thailand only',
+    geographicRestriction: 'Sri Lanka only',
     ...overrides,
   }
 }
@@ -44,13 +44,13 @@ describe('calculateMatchScore', () => {
   })
 
   it('hard-mismatches incompatible currencies', () => {
-    const result = calculateMatchScore(attrs({ currency: 'THB' }), attrs({ currency: 'USD' }))
+    const result = calculateMatchScore(attrs({ currency: 'LKR' }), attrs({ currency: 'USD' }))
     expect(result.hardMismatch).toBe(true)
     expect(result.hardMismatchReason).toMatch(/currency|currencies/i)
   })
 
   it('hard-mismatches the same brand/face value listed in two different country markets', () => {
-    const result = calculateMatchScore(attrs({ country: 'Thailand' }), attrs({ country: 'Philippines' }))
+    const result = calculateMatchScore(attrs({ country: 'Sri Lanka' }), attrs({ country: 'Indonesia' }))
     expect(result.hardMismatch).toBe(true)
     expect(result.hardMismatchReason).toMatch(/country/i)
     expect(result.label).toBe('NO_MATCH')
